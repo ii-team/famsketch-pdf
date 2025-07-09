@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Viewer</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        
+        .container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        
+        .pdf-container {
+            flex: 1;
+            width: 100%;
+            height: calc(100vh - 60px);
+            border: none;
+        }
+        
+        .error-message {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #d32f2f;
+            background-color: #ffebee;
+            border: 1px solid #e57373;
+            border-radius: 4px;
+            margin: 20px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+               
+        <div class="loading" id="loadingMsg">Loading PDF...</div>
+        
+        <div class="error-message" id="errorMsg">
+            <h3>Error Loading PDF</h3>
+            <p>Unable to load the PDF file. Please make sure "download.pdf" exists in the root folder of your project.</p>
+        </div>
+        
+        <embed 
+            id="pdfViewer" 
+            src="download.pdf" 
+            type="application/pdf" 
+            class="pdf-container"
+            style="display: none;"
+        />
+    </div>
+
+    <script>
+        // Wait for the page to load
+        window.addEventListener('load', function() {
+            const pdfViewer = document.getElementById('pdfViewer');
+            const loadingMsg = document.getElementById('loadingMsg');
+            const errorMsg = document.getElementById('errorMsg');
+            
+            // Function to check if PDF loaded successfully
+            function checkPDFLoad() {
+                // Hide loading message
+                loadingMsg.style.display = 'none';
+                
+                // Show the PDF viewer
+                pdfViewer.style.display = 'block';
+                
+                // Set up error handling
+                pdfViewer.addEventListener('error', function() {
+                    showError();
+                });
+                
+                // Alternative method: Check if PDF is accessible
+                fetch('download.pdf')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('PDF not found');
+                        }
+                        return response.blob();
+                    })
+                    .then(blob => {
+                        if (blob.type !== 'application/pdf') {
+                            throw new Error('File is not a PDF');
+                        }
+                        // PDF loaded successfully
+                        console.log('PDF loaded successfully');
+                    })
+                    .catch(error => {
+                        console.error('Error loading PDF:', error);
+                        showError();
+                    });
+            }
+            
+            function showError() {
+                pdfViewer.style.display = 'none';
+                errorMsg.style.display = 'block';
+                loadingMsg.style.display = 'none';
+            }
+            
+            // Give a small delay to allow the embed to attempt loading
+            setTimeout(checkPDFLoad, 1000);
+        });
+        
+        // Alternative approach using object tag if embed fails
+        function fallbackToObject() {
+            const pdfViewer = document.getElementById('pdfViewer');
+            const container = pdfViewer.parentNode;
+            
+            // Create object element as fallback
+            const objectElement = document.createElement('object');
+            objectElement.data = 'download.pdf';
+            objectElement.type = 'application/pdf';
+            objectElement.className = 'pdf-container';
+            objectElement.innerHTML = `
+                <p>Your browser doesn't support PDF viewing. 
+                <a href="download.pdf" target="_blank">Click here to download the PDF</a></p>
+            `;
+            
+            container.replaceChild(objectElement, pdfViewer);
+        }
+        
+        // Handle keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            // Ctrl+R or F5 to reload
+            if ((event.ctrlKey && event.key === 'r') || event.key === 'F5') {
+                location.reload();
+            }
+        });
+    </script>
+</body>
+</html>
